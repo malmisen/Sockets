@@ -5,9 +5,14 @@
 package serverside;
 
 /**
- *
+ * A test comment
  * @author regularclip
  */
 public class ChatServer {
-    
+    /*
+    A main method
+    */
+    public static void main(String[] args){
+        
+    }
 }
