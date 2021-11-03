@@ -4,51 +4,30 @@
  */
 package serverside;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.*;
 import java.io.IOException;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * 
+ *
  * @author regularclip
  */
-public class ChatServer implements Runnable {
+public class ConnectionHandler implements Runnable {
     
-    private static final ArrayList<Socket> connections = new ArrayList<>();
+    private Socket con;
+    private  int threadId;
     
-    public static void main(String[] args) throws IOException{
-       ServerSocket welcomeSocket = new ServerSocket(6969);
-       System.out.println("The server is online...");
-       
-       
-       //Keeps track of connected clients
-       //ConnectionPool connectionPool = new ConnectionPool();
-       
-       
-       //Accept incoming connections
-       while(true){
-           
-           System.out.println("Server is now accepting incoming connections...");
-           Socket connectionSocket = welcomeSocket.accept();
-           connections.add(connectionSocket);
-           System.out.println("Client connected!");
-           
-           System.out.println("Starting new thread to serve client...");
-           Runnable connectionHandler = new ConnectionHandler(connectionSocket);
-           new Thread(connectionHandler).start();
-       }
-               
-     
-   }
+    
+    public ConnectionHandler(Socket connectionSocket) {
+        con = connectionSocket;
+        threadId = (int) (Math.random() * 100);       
+    }
 
     @Override
     public void run() {
-        int threadId = (int)(Math.random()*100);
         System.out.println("Thread " + threadId + " is now running");
      
         try {
@@ -72,5 +51,7 @@ public class ChatServer implements Runnable {
         } catch (IOException ex) {
             Logger.getLogger(ConnectionHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
+
     }
+    
 }
