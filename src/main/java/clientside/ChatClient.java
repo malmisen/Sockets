@@ -7,6 +7,7 @@ package clientside;
 import java.io.*;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,14 +21,17 @@ public class ChatClient {
     
     public static void main(String[] args) throws IOException{
         Socket socket = new Socket("127.0.0.1", 6969);
-        int userId = (int)(Math.random() * 101);
-        
+       
+        System.out.println("You have successfully contected!");
+        System.out.println("Please enter a username:");
+        Scanner keyboard = new Scanner(System.in);
+        String username = keyboard.nextLine();
+        System.out.println("Your username is: " + username + "\nType 'quit' in chat to terminate");
         Runnable litsener = new Litsener(socket);
-        Runnable writer = new Writer(socket, userId);
+        Runnable writer = new Writer(socket, username);
         
         new Thread(litsener).start();
         new Thread(writer).start();
-        System.out.println("You have successfully contected! you have userId: " + userId);
     }      
                 
 }
@@ -58,8 +62,8 @@ class Litsener implements Runnable{
 
 class Writer implements Runnable{
     private Socket socket;
-    private int userId;
-    public Writer(Socket socket, int userId){
+    private String userId;
+    public Writer(Socket socket, String userId){
         this.socket = socket;
         this.userId = userId;
     }
@@ -72,7 +76,10 @@ class Writer implements Runnable{
             System.out.println("Please be nice in the chat!");
             while(true){
                 String message = bf.readLine();
-                if(message.equals("quit")) break;
+                if(message.equals("quit")){
+                    System.out.println("Quitting...");
+                    System.exit(0);
+                }
                 out.writeUTF(userId + ": " + message);
                 out.flush();
             }
