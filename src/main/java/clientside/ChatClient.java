@@ -53,8 +53,8 @@ class Litsener implements Runnable{
                 System.out.println(response);
             }
             
-        } catch (IOException ex) {
-            Logger.getLogger(Litsener.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException e) {
+           System.out.println("Woops! Something went wrong. \nClient disconnected from server");
         }
     }
     
@@ -85,6 +85,7 @@ class Writer implements Runnable{
             }
              
         } catch (IOException ex) {
+            System.out.println("Error occured here!");
             Logger.getLogger(Writer.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
