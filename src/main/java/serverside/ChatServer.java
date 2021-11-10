@@ -4,9 +4,14 @@
  */
 package serverside;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -15,30 +20,30 @@ import java.util.ArrayList;
  * @author regularclip
  */
 public class ChatServer {
- 
-     public static void main(String[] args) throws IOException{
+    
+    public static void main(String[] args) throws IOException{
        ServerSocket welcomeSocket = new ServerSocket(6969);
        System.out.println("The server is online...");
        
-       ArrayList<Socket> connections = new ArrayList<>();
+       //ConnectionPool pool = new ConnectionPool();
        
+       ArrayList<Socket> connections = new ArrayList<Socket>();
+       int threadId = 0;
+      
        //Accept incoming connections
-       while(true){
-           
+       while(true){           
            System.out.println("Server is now accepting incoming connections...");
            Socket connectionSocket = welcomeSocket.accept();
          
            connections.add(connectionSocket);
+           //pool.addConnection(connectionSocket);
            System.out.println("Client connected!");
-  
            System.out.println("Starting new thread to serve client...");
-           Runnable ch = new ConnectionH(connectionSocket, connections);
+           threadId++;
+           Runnable ch = new ConnectionH(connectionSocket, threadId, connections);
            new Thread(ch).start();
-       }
-               
-   }
-
-   
+       }           
+   }   
 }
 
 /*
@@ -47,42 +52,63 @@ public class ChatServer {
 class ConnectionH implements Runnable{
     private Socket con;
     private ArrayList<Socket> cons;
+    private final int threadId;
+    private String clientMessage;
+    //private ConnectionPool pool;
 
-    public ConnectionH(Socket connectionSocket, ArrayList<Socket> connections){
+    public ConnectionH(Socket connectionSocket, int threadId, ArrayList<Socket> connections){
         con = connectionSocket;
         cons = connections;
-     
+        this.threadId = threadId;
+        clientMessage = "";
     }
+    
     @Override
     public void run() {
-        int threadId = (int)(Math.random()*100);
         System.out.println("Thread " + threadId + " is now running");
      
         try {
-            DataInputStream input = new DataInputStream(con.getInputStream());
-            DataOutputStream output = new DataOutputStream(con.getOutputStream());
-            
-            String clientMessage = "";
-            while(true){
-                clientMessage = input.readUTF();
-                if(clientMessage.equals("quit")) break;
-                
-
-                for(Socket connection: cons){
-                    //Check if the socket being served matches the socket in the list of sockets. If so, do not reply to that client
-                    if(!con.equals(connection)){
-                        output = new DataOutputStream(connection.getOutputStream());
-                        output.writeUTF(clientMessage);
+  
+            BufferedReader input  = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            PrintWriter writer;
+            String temp = "";
+         
+            while(!con.isClosed()){
+                temp = input.readLine();
+                if(temp != null){
+                    System.out.println("Thread: " + threadId + " msg: " + temp);
+                    
+                    if(temp.equals("quit")){  //client wants to quit
+                        writer = new PrintWriter(con.getOutputStream());
+                        writer.write("quit" + "\r\n");  //tell client its okay to quit
+                        writer.flush();
+                        writer.close();
+                        
+                        //remove this socket from the list of connected clients
+                        for(Socket connection: cons){
+                            if(con.equals(connection)){
+                                cons.remove(connection);
+                                con.close();
+                                break;   //break out of this for loop
+                            }
+                        }
+                    } else {            
+                        for(Socket connection: cons){           //broadcast to all clients
+                            if(!con.equals(connection)){        //dont write to ourselves.
+                                System.out.println("Thread "+ threadId + " About to broadcast");
+                                writer = new PrintWriter(connection.getOutputStream());
+                                writer.write(temp + "\r\n");
+                                writer.flush();
+                            }
+                        }
                     }
                 }
             }
-            
-            input.close();
-    
-            
+            System.out.println("Thread: " + threadId + " is now done serving its client");
         } catch (IOException ex) {
+            System.out.println("Error on serverside, threadId: " + threadId);
+            System.out.println("Thread: " + threadId + " client message is: " + clientMessage);
             
         }
-    }
-    
+    }    
 }
